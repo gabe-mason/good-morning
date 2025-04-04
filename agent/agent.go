@@ -58,15 +58,44 @@ func (a *Agent) GenerateDailySummary(ctx context.Context) (string, error) {
 	a.contextManager.AppendUserMessage("My name is " + a.config.MyName + " and I'm an engineer in teams " + a.config.LinearTeams)
 	a.contextManager.AppendUserMessage("What's the plan for today? Check my calendar for meetings and Linear for any issues I need to review or work on. Include Zoom links or Linear links if they exist.  I like emojis, please use them.")
 	a.contextManager.AppendUserMessage("Create a section for each meeting I have, include a note of the people in attendance and the topic of the meeting, with some space for notes.")
-	a.contextManager.AppendUserMessage("Create a section for each issue I need to review for my team, is is everyone except me, include a note of the title, author, and priority of the issue with a link to the issue.")
+	a.contextManager.AppendUserMessage("Create a section for each issue I need to review for my team, is is everyone except me, include a note of the title, author, and priority of the issue with a link to the issue, do not redact.")
 	a.contextManager.AppendUserMessage("Create a section for each thing I need to do, include a note of the title, author, and priority of the issue with a link to the issue.")
-	a.contextManager.AppendUserMessage("Please start each file with some interesting ASCII art max 8 x 8 characters.")
-	a.contextManager.AppendUserMessage("Create a markdown formatted response with the following sections:")
-	a.contextManager.AppendUserMessage("# Good Morning " + a.config.MyName + "!")
-	a.contextManager.AppendUserMessage("Now create a joke about my name, the date or the name of my teams.")
-	a.contextManager.AppendUserMessage("## Calendar")
-	a.contextManager.AppendUserMessage("## Things I need to review")
-	a.contextManager.AppendUserMessage("## Things I need to do")
+	a.contextManager.AppendUserMessage("Create a markdown formatted with the following gist")
+	a.contextManager.AppendUserMessage(`Start each file with some interesting ASCII art max 8 x 8 characters.
+{ascii art}
+	# Good Morning {name}!
+{tell me a joke}
+## Calendar 📅
+
+### {time} | {meeting title}
+- **Attendees**: {attendees}
+- **Topic**: {meeting topic}
+- **Zoom**: {zoom link}
+
+#### Notes:
+- 
+
+## Things I need to review 👀
+
+n items need review from my team:
+
+1. [task identifier](link) - title (assigned to)
+
+## Things I need to do ✅
+
+Active issues assigned to you:
+
+**High Priority**:
+- (emoji representing priority) [task identifier](link) - title(status)
+
+**In Progress**:
+- (emoji representing priority) [task identifier](link) - title(status)
+
+**To Do**:
+- (emoji representing priority) [task identifier](link) - title(status)
+## Suggestions 💡
+-- Add suggestions for my day here
+`)
 	myPullRequests, err := a.callModel(ctx)
 	if err != nil {
 		return "", err
@@ -78,7 +107,7 @@ func (a *Agent) GenerateDailySummary(ctx context.Context) (string, error) {
 func (a *Agent) callModel(ctx context.Context) (string, error) {
 	for a.contextManager.HasNewMessages() {
 		response, err := a.client.Messages.New(ctx, anthropic.MessageNewParams{
-			MaxTokens: 4000,
+			MaxTokens: 8000,
 			Messages:  a.contextManager.GetMessages(),
 			Model:     a.modelName,
 			Tools:     a.tools.GetToolDefinitions(),
