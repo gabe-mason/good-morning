@@ -12,11 +12,14 @@ type Config struct {
 	GoodMorningRoot string
 	ICSURL          string
 	GithubToken     string
+	LinearToken     string
+	LinearTeams     string
+	MyName          string
 }
 
 func LoadConfig() (*Config, error) {
 	cfg := &Config{}
-	cfg.AnthropicAPIKey = os.Getenv("ANTHROPIC_API_KEY")
+	cfg.AnthropicAPIKey = os.Getenv("GOOD_MORNING_ANTHROPIC_API_KEY")
 	if cfg.AnthropicAPIKey == "" {
 		return nil, fmt.Errorf("ANTHROPIC_API_KEY is not set")
 	}
@@ -24,13 +27,25 @@ func LoadConfig() (*Config, error) {
 	if cfg.GoodMorningRoot == "" {
 		return nil, fmt.Errorf("GOOD_MORNING_ROOT is not set")
 	}
-	cfg.ICSURL = os.Getenv("ICS_URL")
+	cfg.ICSURL = os.Getenv("GOOD_MORNING_ICS_URL")
 	if cfg.ICSURL == "" {
-		return nil, fmt.Errorf("ICS_URL is not set")
+		return nil, fmt.Errorf("GOOD_MORNING_ICS_URL is not set")
 	}
-	cfg.GithubToken = os.Getenv("GITHUB_TOKEN")
+	cfg.GithubToken = os.Getenv("GOOD_MORNING_GITHUB_TOKEN")
 	if cfg.GithubToken == "" {
-		return nil, fmt.Errorf("GITHUB_TOKEN is not set")
+		return nil, fmt.Errorf("GOOD_MORNING_GITHUB_TOKEN is not set")
+	}
+	cfg.LinearToken = os.Getenv("GOOD_MORNING_LINEAR_TOKEN")
+	if cfg.LinearToken == "" {
+		return nil, fmt.Errorf("GOOD_MORNING_LINEAR_TOKEN is not set")
+	}
+	cfg.LinearTeams = os.Getenv("GOOD_MORNING_LINEAR_TEAMS")
+	if cfg.LinearTeams == "" {
+		return nil, fmt.Errorf("GOOD_MORNING_LINEAR_TEAMS is not set")
+	}
+	cfg.MyName = os.Getenv("GOOD_MORNING_MY_NAME")
+	if cfg.MyName == "" {
+		return nil, fmt.Errorf("GOOD_MORNING_MY_NAME is not set")
 	}
 	return cfg, nil
 }

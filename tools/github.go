@@ -49,7 +49,7 @@ func (g *Github) Run(ctx context.Context, arguments json.RawMessage) (string, er
 func (g *Github) searchGitHub(ctx context.Context, query string) (string, error) {
 	escapedQuery := url.QueryEscape(query)
 	req, err := http.NewRequestWithContext(ctx, "GET",
-		fmt.Sprintf("https://api.github.com/search/issues?q=%s", escapedQuery), nil)
+		fmt.Sprintf("https://api.github.com/search/issues?q=%s&advanced_search=true", escapedQuery), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %v", err)
 	}
@@ -82,11 +82,11 @@ func (g *Github) searchGitHub(ctx context.Context, query string) (string, error)
 }
 
 func (g *Github) listMyPRs(ctx context.Context) (string, error) {
-	return g.searchGitHub(ctx, "is:pr is:open author:@me")
+	return g.searchGitHub(ctx, "is:pull-request is:open author:@me")
 }
 
 func (g *Github) listReviewRequests(ctx context.Context) (string, error) {
-	return g.searchGitHub(ctx, "is:pr is:open review-requested:@me")
+	return g.searchGitHub(ctx, "is:pull-request is:open review-requested:@me")
 }
 
 func (g *Github) Name() string {

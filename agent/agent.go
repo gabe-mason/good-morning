@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/anthropics/anthropic-sdk-go"
@@ -18,6 +19,7 @@ type Agent struct {
 	state          AgentState
 	contextWindow  int
 	modelName      string
+	config         *config.Config
 }
 
 type AgentState struct {
@@ -47,11 +49,25 @@ func NewAgent(client anthropic.Client, tools tools.ToolCalls, config *config.Con
 		},
 		contextWindow: contextWindow,
 		modelName:     anthropic.ModelClaude3_5SonnetLatest,
+		config:        config,
 	}
 }
 
 func (a *Agent) GenerateDailySummary(ctx context.Context) (string, error) {
-	myPullRequests, err := a.getGithubPRs(ctx)
+	a.contextManager.AppendUserMessage("The current date is " + time.Now().Format("2006-01-02"))
+	a.contextManager.AppendUserMessage("My name is " + a.config.MyName + " and I'm an engineer in teams " + a.config.LinearTeams)
+	a.contextManager.AppendUserMessage("What's the plan for today? Check my calendar for meetings and Linear for any issues I need to review or work on. Include Zoom links or Linear links if they exist.  I like emojis, please use them.")
+	a.contextManager.AppendUserMessage("Create a section for each meeting I have, include a note of the people in attendance and the topic of the meeting, with some space for notes.")
+	a.contextManager.AppendUserMessage("Create a section for each issue I need to review for my team, is is everyone except me, include a note of the title, author, and priority of the issue with a link to the issue.")
+	a.contextManager.AppendUserMessage("Create a section for each thing I need to do, include a note of the title, author, and priority of the issue with a link to the issue.")
+	a.contextManager.AppendUserMessage("Please start each file with some interesting ASCII art max 8 x 8 characters.")
+	a.contextManager.AppendUserMessage("Create a markdown formatted response with the following sections:")
+	a.contextManager.AppendUserMessage("# Good Morning " + a.config.MyName + "!")
+	a.contextManager.AppendUserMessage("Now create a joke about my name, the date or the name of my teams.")
+	a.contextManager.AppendUserMessage("## Calendar")
+	a.contextManager.AppendUserMessage("## Things I need to review")
+	a.contextManager.AppendUserMessage("## Things I need to do")
+	myPullRequests, err := a.callModel(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -59,29 +75,10 @@ func (a *Agent) GenerateDailySummary(ctx context.Context) (string, error) {
 	return myPullRequests, nil
 }
 
-func (a *Agent) getCalendarEvents(ctx context.Context) (string, error) {
-	a.contextManager.AppendUserMessage("What does my calendar look like for today? Create a markdown formatted table response. If the meetings have Zoom links then include them in the table.")
-	a.contextManager.AppendUserMessage("The current date is " + time.Now().Format("2006-01-02"))
-	response, err := a.callModel(ctx)
-	if err != nil {
-		return "", err
-	}
-	return response, nil
-}
-
-func (a *Agent) getGithubPRs(ctx context.Context) (string, error) {
-	a.contextManager.AppendUserMessage("What are my open pull requests? Create a markdown formatted table response. If the pull requests have links then include them in the table.")
-	response, err := a.callModel(ctx)
-	if err != nil {
-		return "", err
-	}
-	return response, nil
-}
-
 func (a *Agent) callModel(ctx context.Context) (string, error) {
 	for a.contextManager.HasNewMessages() {
 		response, err := a.client.Messages.New(ctx, anthropic.MessageNewParams{
-			MaxTokens: 1024,
+			MaxTokens: 4000,
 			Messages:  a.contextManager.GetMessages(),
 			Model:     a.modelName,
 			Tools:     a.tools.GetToolDefinitions(),
@@ -114,6 +111,7 @@ func (a *Agent) processResponse(ctx context.Context, response *anthropic.Message
 		switch block := block.AsAny().(type) {
 		case anthropic.TextBlock:
 			if response.StopReason == "tool_use" {
+				fmt.Println(block.Text)
 				continue
 			}
 			return block.Text, nil
@@ -132,6 +130,7 @@ func (a *Agent) processResponse(ctx context.Context, response *anthropic.Message
 func (a *Agent) processToolUseBlock(ctx context.Context, block *anthropic.ToolUseBlock) (anthropic.ContentBlockParamUnion, error) {
 	input := block.Input
 	tool, err := a.tools.GetTool(block.Name)
+	fmt.Println("Going to have a chin wag with " + block.Name + ".")
 	if err != nil {
 		return anthropic.NewToolResultBlock(block.ID, "This tool is not in the list of tools.", true), nil
 	}
@@ -142,5 +141,6 @@ func (a *Agent) processToolUseBlock(ctx context.Context, block *anthropic.ToolUs
 		}
 		return anthropic.NewToolResultBlock(block.ID, "An error occurred while running the tool.", true), nil
 	}
+	fmt.Println(block.Name + " has answered my questions.")
 	return anthropic.NewToolResultBlock(block.ID, toolResult, false), nil
 }

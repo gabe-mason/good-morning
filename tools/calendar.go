@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/anthropics/anthropic-sdk-go"
@@ -27,6 +28,7 @@ type CalendarInput struct {
 }
 
 func (c *Calendar) Run(ctx context.Context, arguments json.RawMessage) (string, error) {
+	fmt.Println("Looking at the calendar to see what's happening today.")
 	var input CalendarInput
 	if err := json.Unmarshal(arguments, &input); err != nil {
 		return "", &InvalidToolArgumentsError{
@@ -89,7 +91,7 @@ func (c *Calendar) Run(ctx context.Context, arguments json.RawMessage) (string, 
 			}
 		}
 	}
-
+	fmt.Println("I can see you have " + strconv.Itoa(len(filteredCal.Events())) + " meetings today.")
 	// Serialize the filtered calendar
 	return filteredCal.Serialize(), nil
 }
