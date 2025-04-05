@@ -28,7 +28,7 @@ type AgentState struct {
 }
 
 func NewAgent(client anthropic.Client, tools tools.ToolCalls, config *config.Config) *Agent {
-	contextWindow := 4000 // Default context window size
+	contextWindow := 8192 // Default max size for Claude 3.5 Sonnet
 	contextManager := CreateContextManager(
 		tools,
 		contextWindow,
@@ -63,11 +63,12 @@ func (a *Agent) GenerateDailySummary(ctx context.Context) (string, error) {
 	a.contextManager.AppendUserMessage("Create a markdown formatted with the following gist")
 	a.contextManager.AppendUserMessage(`Start each file with some interesting ASCII art max 8 x 8 characters.
 {ascii art}
-	# Good Morning {name}!
+# Good Morning {name}!
 {tell me a joke}
+{any comments that you have put them here}
 ## Calendar 📅
 
-### {time} | {meeting title}
+### {emoji representing meeting type} {time} | {meeting title}
 - **Attendees**: {attendees}
 - **Topic**: {meeting topic}
 - **Zoom**: {zoom link}
@@ -96,18 +97,18 @@ Active issues assigned to you:
 ## Suggestions 💡
 -- Add suggestions for my day here
 `)
-	myPullRequests, err := a.callModel(ctx)
+	summary, err := a.callModel(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	return myPullRequests, nil
+	return summary, nil
 }
 
 func (a *Agent) callModel(ctx context.Context) (string, error) {
 	for a.contextManager.HasNewMessages() {
 		response, err := a.client.Messages.New(ctx, anthropic.MessageNewParams{
-			MaxTokens: 8000,
+			MaxTokens: int64(a.contextWindow),
 			Messages:  a.contextManager.GetMessages(),
 			Model:     a.modelName,
 			Tools:     a.tools.GetToolDefinitions(),

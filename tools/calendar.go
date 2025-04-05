@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/anthropics/anthropic-sdk-go"
@@ -91,7 +90,7 @@ func (c *Calendar) Run(ctx context.Context, arguments json.RawMessage) (string, 
 			}
 		}
 	}
-	fmt.Println("I can see you have " + strconv.Itoa(len(filteredCal.Events())) + " meetings today.")
+	fmt.Printf("I can see you have %d meetings today.\n", len(filteredCal.Events()))
 	// Serialize the filtered calendar
 	return filteredCal.Serialize(), nil
 }
