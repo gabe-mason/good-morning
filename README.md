@@ -81,10 +81,10 @@ The summary includes:
 - Linear tasks and updates
 - AI-generated insights and recommendations
 
-## License
-
-MIT License
-
-## Author
-
-Gabe Mason
+## Next Steps
+- [ ] Create good morning daemon
+- [ ] Implement webhooks to update the document from Linear and Github (or this could be just syncing)
+- [ ] Periodically sync calendar
+- [ ] Add file watcher to analyse meeting notes and create actions off the back of notes
+- [ ] Implement context summarisation to reduce token count with sliding window
+- [ ] Implement auto git commit via Anthropic computer use
